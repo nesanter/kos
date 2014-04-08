@@ -1,0 +1,4 @@
+FLAGS=":cls:prep:"
+FILES="compat_gen.sh boot64.asm kernel64.c mident.asm"
+SHARED_FILES="handoff.h mident.asm"
+CUSTOM_LINKER_SCRIPT="linker64.ld"

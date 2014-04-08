@@ -1,0 +1,3 @@
+FLAGS=":prep:"
+SHARED_FILES="mident.asm"
+FILES="test.c mident.asm"

@@ -1,0 +1,7 @@
+OS_NAME="snrk-os"
+MODULES="stage1 stage2"
+LINKER_SCRIPT="linker_m.ld"
+KERNEL="stage1"
+CROSSPATH="/opt/k/cross/bin"
+BOOT_CMDLINE="kernel64=stage2 verbose"
+BOOT_MODULES="stage2"

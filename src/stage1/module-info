@@ -1,0 +1,4 @@
+FLAGS=":m32:cls:"
+FILES="boot.asm grub.sh kernel32.c terminal32.c util32.c cpuid32.asm mboot32.c mod32.c mem32.c"
+SHARED_FILES="handoff.h elf.h ksym.h"
+CUSTOM_LINKER_SCRIPT="linker32.ld"
