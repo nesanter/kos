@@ -1,24 +1,24 @@
 bits 32
 
-MBALIGN		equ 1<<0
-MEMINFO		equ 1<<1
-FLAGS		equ MBALIGN | MEMINFO
-MAGIC		equ 0x1BADB002
+MBALIGN     equ 1<<0
+MEMINFO     equ 1<<1
+FLAGS       equ MBALIGN | MEMINFO
+MAGIC       equ 0x1BADB002
 MAGICCHECK  equ 0x2BADB002
-CHECKSUM	equ -(MAGIC + FLAGS)
+CHECKSUM    equ -(MAGIC + FLAGS)
 
 ERROR_PTR   equ 0xB8002
 
 section .multiboot
 align 4
-	dd MAGIC
-	dd FLAGS
-	dd CHECKSUM
+    dd MAGIC
+    dd FLAGS
+    dd CHECKSUM
     
 section .bootstrap_stack progbits noalloc noexec write
 align 4
 stack_bottom:
-	 times 16384 db 0
+     times 16384 db 0
 stack_top:
 
 section .data
