@@ -7,51 +7,51 @@ unset TARGET
 . options
 
 if [ -z "$OLEVEL" ] ; then
-	OLEVEL=2
+    OLEVEL=2
 fi
 
 if [ -z "$ARCH" ] ; then
-	ARCH=native
+    ARCH=native
 fi
 
 if [ -z "$TARGET" ] ; then
-	TARGET="x86_64-elf"
+    TARGET="x86_64-elf"
 fi
 
 if [ -z "$EMU32" ] ; then
-	EMU32="NO"
+    EMU32="NO"
 fi
 
 if [ -z "$TARGET32" ] ; then
-	if [ "$EMU32" == "YES" ] ; then
-		TARGET32=$TARGET
-	else
-		TARGET32="i586-elf"
-	fi	
+    if [ "$EMU32" == "YES" ] ; then
+        TARGET32=$TARGET
+    else
+        TARGET32="i586-elf"
+    fi    
 fi
 
 if [ "$1" == "help" ] ; then
-	echo "./build [help] [clean] [iso]"
-	echo "  current options:"
-	[ ! -e options ] && echo "  (options file not found)" && exit 1
-	. options
-	echo "    OS_NAME=$OS_NAME"
-	echo "    KERNEL=$KERNEL"
-	echo "    MODULES=$MODULES"
-	echo "    LINKER_SCRIPT=$LINKER_SCRIPT"
-	echo "    CROSSPATH=$CROSSPATH"
-	echo "    ARCH=$ARCH"
-	echo "    OLEVEL=$OLEVEL"
-	echo "    TARGET=$TARGET"
-	echo "    TARGET32=$TARGET32"
-	echo "    EMU32=$EMU32"
-	
-	exit 0
+    echo "./build [help] [clean] [iso]"
+    echo "  current options:"
+    [ ! -e options ] && echo "  (options file not found)" && exit 1
+    . options
+    echo "    OS_NAME=$OS_NAME"
+    echo "    KERNEL=$KERNEL"
+    echo "    MODULES=$MODULES"
+    echo "    LINKER_SCRIPT=$LINKER_SCRIPT"
+    echo "    CROSSPATH=$CROSSPATH"
+    echo "    ARCH=$ARCH"
+    echo "    OLEVEL=$OLEVEL"
+    echo "    TARGET=$TARGET"
+    echo "    TARGET32=$TARGET32"
+    echo "    EMU32=$EMU32"
+    
+    exit 0
 fi
 
 if [ "$1" == "clean" ] ; then
-	rm -r out/*
-	shift 1
+    rm -r out/*
+    shift 1
 fi
 
 [ -e .error_log ] && rm .error_log
@@ -63,9 +63,9 @@ OLDPATH=$PATH
 PATH=$CROSSPATH
 CC=$(command -v $TARGET-gcc)
 if [ "$EMU32" == "YES" ] ; then
-	CC32=$CC
+    CC32=$CC
 else
-	CC32=$(command -v $TARGET32-gcc)
+    CC32=$(command -v $TARGET32-gcc)
 fi
 
 PATH=$OLDPATH
@@ -78,83 +78,83 @@ AS=$(command -v nasm)
 
 CFLAGS="-O$OLEVEL -std=gnu99 -Wall -Werror -ffreestanding -mcmodel=large -mno-red-zone -march=$ARCH -fno-unwind-tables"
 if [ "$EMU32" == "YES" ] ; then
-	CFLAGS32="-m32 -O$OLEVEL -std=gnu99 -Wall -Werror -ffreestanding -fno-unwind-tables -D__MODE_KERNEL32"
+    CFLAGS32="-m32 -O$OLEVEL -std=gnu99 -Wall -Werror -ffreestanding -fno-unwind-tables -D__MODE_KERNEL32"
 else
-	CFLAGS32="-O$OLEVEL -std=gnu99 -Wall -Werror -ffreestanding -fno-unwind-tables -D__MODE_KERNEL32"
+    CFLAGS32="-O$OLEVEL -std=gnu99 -Wall -Werror -ffreestanding -fno-unwind-tables -D__MODE_KERNEL32"
 fi
 
 LDCFLAGS="-O$OLEVEL -ffreestanding -nostdlib -lgcc -fno-unwind-tables -Xlinker -z -Xlinker max-page-size=0x1000"
 if [ "$EMU32" == "YES" ] ; then
-	LDCFLAGS32="-m32 -O$OLEVEL -ffreestanding -nostdlib -lgcc32 -fno-exceptions -Xlinker -melf_i386"
+    LDCFLAGS32="-m32 -O$OLEVEL -ffreestanding -nostdlib -lgcc32 -fno-exceptions -Xlinker -melf_i386"
 else
-	LDCFLAGS32="-O$OLEVEL -ffreestanding -nostdlib -lgcc -fno-exceptions"
+    LDCFLAGS32="-O$OLEVEL -ffreestanding -nostdlib -lgcc -fno-exceptions"
 fi
 
 [ -z "$LINKER_SCRIPT" ] && { echo "Options error: LINKER_SCRIPT not specified" ; exit 1 ; }
 [ ! -e src/$LINKER_SCRIPT ] && { echo "Options error: $LINKER_SCRIPT not found" ; exit 1 ; }
 
 for M in $(echo $MODULES) ; do
-	(
-	
-		[ ! -e src/$M/module-info ] && { echo "Failed: no module-info ($M)" >> .error_log ; exit 1 ; }
-		
-		. src/$M/module-info
-		
-		[ ! -d out/$M ] && mkdir -p out/$M
-		
-		VERBOSE=$(grep -o ':verbose:' <<< $FLAGS)
-		M32=$(grep -o ':m32:' <<< $FLAGS)
-		CUSTOM_LS=$(grep -o ':cls:' <<< $FLAGS)
+    (
+    
+        [ ! -e src/$M/module-info ] && { echo "Failed: no module-info ($M)" >> .error_log ; exit 1 ; }
+        
+        . src/$M/module-info
+        
+        [ ! -d out/$M ] && mkdir -p out/$M
+        
+        VERBOSE=$(grep -o ':verbose:' <<< $FLAGS)
+        M32=$(grep -o ':m32:' <<< $FLAGS)
+        CUSTOM_LS=$(grep -o ':cls:' <<< $FLAGS)
         PREP=$(grep -o ':prep:' <<< $FLAGS)
-		
-		MNAME=$(sed 's/\//_/g' <<< $M)
+        
+        MNAME=$(sed 's/\//_/g' <<< $M)
 
-		[ -e src/$M/.updated ] && rm src/$M/.updated
-		[ -e src/$M/.error_log ] && rm src/$M/.error_log
-		
-		for F in $SHARED_FILES ; do
-			[ -e src/shared/$F ] && cp src/shared/$F src/$M || { echo "Failed: shared file $F not found ($M)" >> src/$M/.error_log ; exit 1 ; }
-		done
-		
-		for F in $(ls -R src/$M) ; do
-			[ src/$M/$F -nt out/$M/m_$MNAME.bin ] && touch src/$M/.updated
-		done
-		
-		wait
+        [ -e src/$M/.updated ] && rm src/$M/.updated
+        [ -e src/$M/.error_log ] && rm src/$M/.error_log
+        
+        for F in $SHARED_FILES ; do
+            [ -e src/shared/$F ] && cp src/shared/$F src/$M || { echo "Failed: shared file $F not found ($M)" >> src/$M/.error_log ; exit 1 ; }
+        done
+        
+        for F in $(ls -R src/$M) ; do
+            [ src/$M/$F -nt out/$M/m_$MNAME.bin ] && touch src/$M/.updated
+        done
+        
+        wait
 
-		[ -e src/$M/.error_log ] && { cat src/$M/.error_log >> .error_log ; exit 1 ; }
-		
-		[ ! -e src/$M/.updated ] && { [ -n "$VERBOSE" ] && echo "Skipping $M" ; true ; } && exit 0
-		
-		[ -n "$VERBOSE" ] && echo "Building $M"
-		
-		if [ -n "$M32" ] ; then
-			FF="elf"
-			CFLAGS_ACTUAL=$CFLAGS32
-			LDCFLAGS_ACTUAL=$LDCFLAGS32
-			CC_ACTUAL=$CC32
-		else
-			FF="elf64"
-			CFLAGS_ACTUAL=$CFLAGS
-			LDCFLAGS_ACTUAL=$LDCFLAGS
-			CC_ACTUAL=$CC
-		fi
-		
-		if [ -n "$CUSTOM_LS" ] ; then
-			[ -z "$CUSTOM_LINKER_SCRIPT" ] && { echo "Failed: :ls: specified but no CUSTOM_LINKER_SCRIPT ($M)" >> src/$M/.error_log ; exit 1 ; }
-			[ ! -e src/$M/$CUSTOM_LINKER_SCRIPT ] && { echo "Failed: linker script $CUSTOM_LINKER_SCRIPT not found ($M)" >> src/$M/.error_log ; exit 1 ; }
-			LSH="src/$M/$CUSTOM_LINKER_SCRIPT"
-		else
-			LSH="src/$LINKER_SCRIPT"
-		fi
-		
-		[ -e out/$M/.ofiles ] && rm out/$M/.ofiles
-		
-		for F in $FILES ; do
-			(
+        [ -e src/$M/.error_log ] && { cat src/$M/.error_log >> .error_log ; exit 1 ; }
+        
+        [ ! -e src/$M/.updated ] && { [ -n "$VERBOSE" ] && echo "Skipping $M" ; true ; } && exit 0
+        
+        [ -n "$VERBOSE" ] && echo "Building $M"
+        
+        if [ -n "$M32" ] ; then
+            FF="elf"
+            CFLAGS_ACTUAL=$CFLAGS32
+            LDCFLAGS_ACTUAL=$LDCFLAGS32
+            CC_ACTUAL=$CC32
+        else
+            FF="elf64"
+            CFLAGS_ACTUAL=$CFLAGS
+            LDCFLAGS_ACTUAL=$LDCFLAGS
+            CC_ACTUAL=$CC
+        fi
+        
+        if [ -n "$CUSTOM_LS" ] ; then
+            [ -z "$CUSTOM_LINKER_SCRIPT" ] && { echo "Failed: :ls: specified but no CUSTOM_LINKER_SCRIPT ($M)" >> src/$M/.error_log ; exit 1 ; }
+            [ ! -e src/$M/$CUSTOM_LINKER_SCRIPT ] && { echo "Failed: linker script $CUSTOM_LINKER_SCRIPT not found ($M)" >> src/$M/.error_log ; exit 1 ; }
+            LSH="src/$M/$CUSTOM_LINKER_SCRIPT"
+        else
+            LSH="src/$LINKER_SCRIPT"
+        fi
+        
+        [ -e out/$M/.ofiles ] && rm out/$M/.ofiles
+        
+        for F in $FILES ; do
+            (
                 
-				[ ! -e src/$M/$F ] && { echo "Failed: missing file ($F)" >> src/$M/.error_log ; exit 1 ; }
-				
+                [ ! -e src/$M/$F ] && { echo "Failed: missing file ($F)" >> src/$M/.error_log ; exit 1 ; }
+                
                 if [ -n $PREP ] ; then
                     PREPTHIS=$(grep -o '__PREPME' < src/$M/$F)
                     if [ -n "$PREPTHIS" ] ; then
@@ -166,44 +166,44 @@ for M in $(echo $MODULES) ; do
                 fi
                 
                 EXT=$(grep -o '\.[^\.]*$' <<< $F)
-				NAME=$(sed 's/\(.*\)'$EXT'/\1/' <<< $(sed 's/\//_/g' <<< $F))
+                NAME=$(sed 's/\(.*\)'$EXT'/\1/' <<< $(sed 's/\//_/g' <<< $F))
                 
-				case $EXT in
-					.asm)
-						$AS -f$FF src/$M/$F -o out/$M/$NAME.o || { echo "Failed ($F)" >> src/$M/.error_log ; exit 1 ; }
-						echo "out/$M/$NAME.o" >> out/$M/.ofiles
-						;;
-					.c)
-						$CC_ACTUAL -c src/$M/$F -o out/$M/$NAME.o $CFLAGS_ACTUAL || { echo "Failed ($F)" >> src/$M/.error_log ; exit 1 ; }
-						echo "out/$M/$NAME.o" >> out/$M/.ofiles
-						;;
-					.sh)
-						M=$M OS_NAME=$OS_NAME OUT="$(pwd)/out" BOOT_CMDLINE=$BOOT_CMDLINE BOOT_MODULES=$BOOT_MODULES ./src/$M/$F
-						;;
-					*)
-						echo "Ignoring $F (unknown file type $EXT)"
-						;;
-				esac
-				
-				[ -n "$VERBOSE" ] && echo "$M:$F passed"
-			)
-		done
-		
-		wait
-		
-		[ -e src/$M/.error_log ] && cat src/$M/.error_log >> .error_log && exit 1
-		
-		[ -n "$VERBOSE" ] && echo "Linking $M"
-		
-		$CC_ACTUAL -T $LSH -o out/$M/m_$MNAME.bin $LDCFLAGS_ACTUAL $(cat out/$M/.ofiles) || { echo "Failed: link ($M)" >> src/$M/.error_log ; exit 1 ; }
-		
-		[ -e src/$M/.error_log ] && { cat src/$M/.error_log >> .error_log ; exit 1 ; }
-		
-		[ "$M" == "$KERNEL" ] && mv out/$M/m_$MNAME.bin out/kernel.bin
-		
-		[ -n "$VERBOSE" ] && echo "Finished $M (out/$M/m_$MNAME.bin)"
-		
-	)
+                case $EXT in
+                    .asm)
+                        $AS -f$FF src/$M/$F -o out/$M/$NAME.o || { echo "Failed ($F)" >> src/$M/.error_log ; exit 1 ; }
+                        echo "out/$M/$NAME.o" >> out/$M/.ofiles
+                        ;;
+                    .c)
+                        $CC_ACTUAL -c src/$M/$F -o out/$M/$NAME.o $CFLAGS_ACTUAL || { echo "Failed ($F)" >> src/$M/.error_log ; exit 1 ; }
+                        echo "out/$M/$NAME.o" >> out/$M/.ofiles
+                        ;;
+                    .sh)
+                        M=$M OS_NAME=$OS_NAME OUT="$(pwd)/out" BOOT_CMDLINE=$BOOT_CMDLINE BOOT_MODULES=$BOOT_MODULES ./src/$M/$F
+                        ;;
+                    *)
+                        echo "Ignoring $F (unknown file type $EXT)"
+                        ;;
+                esac
+                
+                [ -n "$VERBOSE" ] && echo "$M:$F passed"
+            )
+        done
+        
+        wait
+        
+        [ -e src/$M/.error_log ] && cat src/$M/.error_log >> .error_log && exit 1
+        
+        [ -n "$VERBOSE" ] && echo "Linking $M"
+        
+        $CC_ACTUAL -T $LSH -o out/$M/m_$MNAME.bin $LDCFLAGS_ACTUAL $(cat out/$M/.ofiles) || { echo "Failed: link ($M)" >> src/$M/.error_log ; exit 1 ; }
+        
+        [ -e src/$M/.error_log ] && { cat src/$M/.error_log >> .error_log ; exit 1 ; }
+        
+        [ "$M" == "$KERNEL" ] && mv out/$M/m_$MNAME.bin out/kernel.bin
+        
+        [ -n "$VERBOSE" ] && echo "Finished $M (out/$M/m_$MNAME.bin)"
+        
+    )
 done
 
 wait
@@ -214,21 +214,21 @@ echo "$OS_NAME build [compile] passed"
 
 if [ "$1" == "iso" ] ; then
 
-	[ -d iso ] && rm -r iso
-	
-	mkdir -p iso/boot/{grub,modules}
+    [ -d iso ] && rm -r iso
+    
+    mkdir -p iso/boot/{grub,modules}
 
-	[ ! -e out/kernel.bin ] && { echo >&2 "Failed: cannot find kernel.bin (iso)" ; exit 1 ; }
-	[ ! -e out/grub.cfg ] && { echo >&2 "Failed: cannot find grub.cfg (iso)" ; exit 1 ; }
+    [ ! -e out/kernel.bin ] && { echo >&2 "Failed: cannot find kernel.bin (iso)" ; exit 1 ; }
+    [ ! -e out/grub.cfg ] && { echo >&2 "Failed: cannot find grub.cfg (iso)" ; exit 1 ; }
 
-	cp out/kernel.bin iso/boot/.
-	MODBINS=$(find out -name m_*\.bin)
-	[ -n "$MODBINS" ] && cp $MODBINS iso/boot/modules
-	cp out/grub.cfg iso/boot/grub
-	
-	grub-mkrescue -o out/$OS_NAME.iso iso 2> .tmp || { cat .tmp >&2 ; echo "Failed (iso)" >> .error_log ; }
-	
-	[ -e .error_log ] && { cat .error_log >&2 ; exit 1 ; }
-	
-	echo "$OS_NAME build [iso] passed"
+    cp out/kernel.bin iso/boot/.
+    MODBINS=$(find out -name m_*\.bin)
+    [ -n "$MODBINS" ] && cp $MODBINS iso/boot/modules
+    cp out/grub.cfg iso/boot/grub
+    
+    grub-mkrescue -o out/$OS_NAME.iso iso 2> .tmp || { cat .tmp >&2 ; echo "Failed (iso)" >> .error_log ; }
+    
+    [ -e .error_log ] && { cat .error_log >&2 ; exit 1 ; }
+    
+    echo "$OS_NAME build [iso] passed"
 fi
