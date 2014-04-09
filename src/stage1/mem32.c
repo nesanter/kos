@@ -2,6 +2,7 @@
 #include "mod32.h"
 #include "terminal32.h"
 #include "util32.h"
+#include "kernel32.h"
 
 /* GDT */
 
@@ -165,7 +166,7 @@ uint32_t mem32_build_idt(idt_ptr_t *idt_ptr, void* dest, uint32_t *size, kernel6
  *  in the pointer pointed to by page_table_ptr_ptr
  */
  
-/* PML4E (512 GB) or PDPTE (1 GB) or
+/* PML4E (512 GB) or PDPTE (1 GB) or PDE (2 MB) or PTE (4KB)
  *   0     - present
  *   1     - r/w
  *   2     - u/s
@@ -209,7 +210,7 @@ uint32_t mem32_setup_early_paging(void **page_table_ptr_ptr, void *kernel64_star
         pml4_ptr = (uint32_t*)(*page_table_ptr_ptr);
     }
     
-    //*page_table_ptr_ptr = pml4_ptr;
+    *page_table_ptr_ptr = pml4_ptr;
     
     //clear this memory
     for (uint32_t i=0; i<0x400; i++) {
@@ -222,7 +223,7 @@ uint32_t mem32_setup_early_paging(void **page_table_ptr_ptr, void *kernel64_star
     //now map kernel64 to high memory
     
     //we're going to put these tables after the kernel
-    uint32_t pt_ptr = ADJUST_PTR(kernel64_end,0x1000);
+    uint32_t *pt_ptr = ADJUST_PTR(kernel64_end,0x1000);
     
     //determine how many pages this will require:
     
@@ -250,17 +251,27 @@ uint32_t mem32_setup_early_paging(void **page_table_ptr_ptr, void *kernel64_star
     //then add the PDE entry
     //this is bits 21:29 (0x3FE00000)
     
-    uint32_t p2_min = (KERNEL64_BASE & 0x3FE00000) >> 21UL;
-    uint32_t p2_max = p2_min + (npages >> 9);
+    uint32_t p2 = (KERNEL64_BASE & 0x3FE00000) >> 21UL;
     
     //finally add the PTE
     //this is bits 12:20 (0x1FF000)
     
-    uint32_t p1_min = (KERNEL64_BASE & 0x1FF000) >> 12UL;
-    uint32_t p1_max = p1_min + npages;
+    uint32_t p1 = (KERNEL64_BASE & 0x1FF000) >> 12UL;
     
     //the rest will always be zero (guaranteed to be page aligned)
     //this is bits 0:11 (0xFFF)
+    
+    if (verbose) {
+        kterm_write("[note] p4, p3, p2, p1: ");
+        kterm_write_ui32d(p4);
+        kterm_write(", ");
+        kterm_write_ui32d(p3);
+        kterm_write(", ");
+        kterm_write_ui32d(p2);
+        kterm_write(", ");
+        kterm_write_ui32d(p1);
+        kterm_write_line();
+    }
     
     //TODO: ensure there is available space before we just start writing
     
@@ -270,16 +281,79 @@ uint32_t mem32_setup_early_paging(void **page_table_ptr_ptr, void *kernel64_star
         pt_ptr[i] = 0;
     }
     
-    make_entry(pt_ptr, 511, (uint32_t)pt_ptr
+    make_entry(pt_ptr, p3, ((uint32_t)pt_ptr)+0x1000, 0, P_ATTR_PRESENT | P_ATTR_READWRITE, 0);
     
+    //make_entry(pt_ptr, 511, (uint32_t)pt_ptr, 0, P_ATTR_PRESENT | P_ATTR_READWRITE, 0);
     
+    pt_ptr += 0x1000;
+    for (uint32_t i=0; i<0x400; i++) {
+        pt_ptr[i] = 0;
+    }
+    
+    //make_entry(pt_ptr, 511, (uint32_t)pt_ptr, 0, P_ATTR_PRESENT | P_ATTR_READWRITE, 0);
+    
+    uint32_t *pt_ptr2 = pt_ptr + 0x1000;
+    
+    uint32_t pd = p2;
+    uint32_t pmax = 512;
+    uint32_t pn = 0;
+    
+    for (uint32_t i=0; i<0x400; i++) {
+        pt_ptr2[i] = 0;
+    }
+    
+    for (uint32_t p=p1; p<npages; p++) {
+        if (p == pmax) {
+            pd++;
+            pmax += 512;
+            pt_ptr2 += 0x1000;
+            for (uint32_t i=0; i<0x400; i++) {
+                pt_ptr2[i] = 0;
+            }
+            make_entry(pt_ptr, pd, (uint32_t)pt_ptr2, 0, P_ATTR_PRESENT | P_ATTR_READWRITE, 0);
+            //make_entry(pt_ptr2, 511, (uint32_t)pt_ptr2, 0, P_ATTR_PRESENT | P_ATTR_READWRITE, 0);
+        }
+        if (verbose) {
+            kterm_write("[note] mapping ");
+            kterm_write_ui32hx(kernel64_start + (p * 0x1000));
+            kterm_write(" (slot ");
+            kterm_write_ui32d(p % 512);
+            kterm_write(")\n");
+        }
+        make_entry(pt_ptr2, p % 512, (uint32_t)kernel64_start + (pn * 0x1000), 0, P_ATTR_PRESENT | P_ATTR_READWRITE, 0);
+        pn++;
+    }
+    
+    //finally identity map the first 0x10000 (1MB)
+    pt_ptr2 += 0x1000;
+    
+    make_entry(pml4_ptr, 0, (uint32_t)pt_ptr2, 0, P_ATTR_PRESENT | P_ATTR_READWRITE, 0);
+    for (uint32_t i=0; i<0x400; i++) {
+        pt_ptr2[i] = 0;
+    }
+    make_entry(pt_ptr2, 0, ((uint32_t)pt_ptr2) + 0x1000, 0, P_ATTR_PRESENT | P_ATTR_READWRITE, 0);
+    pt_ptr2 += 0x1000;
+    for (uint32_t i=0; i<0x400; i++) {
+        pt_ptr2[i] = 0;
+    }
+    make_entry(pt_ptr2, 0, ((uint32_t)pt_ptr2) + 0x1000, 0, P_ATTR_PRESENT | P_ATTR_READWRITE, 0);
+    pt_ptr2 += 0x1000;
+    for (uint32_t i=0; i<0x200; i++) {
+        make_entry(pt_ptr2, i, i*4096, 0, P_ATTR_PRESENT | P_ATTR_READWRITE, 0);
+    }
+    for (uint32_t i=0x200; i<0x400; i++) {
+        pt_ptr2[i] = 0;
+    }
+    if (verbose) {
+        kterm_write("[note] page tables end at ");
+        kterm_write_ui32hx(pt_ptr2+0x1000);
+        kterm_write(" (");
+        kterm_write_ui32d(((uint32_t)pt_ptr2+0x1000-(uint32_t)ADJUST_PTR(kernel64_end,0x1000))/0x1000);
+        kterm_write(" tables)\n");
+        //kterm_write_line();
+    }
     
     return 0;
-    
-    
-    
-    
-    
 }
 
 

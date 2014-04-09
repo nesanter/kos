@@ -171,12 +171,12 @@ void kernel32_main(uint32_t multiboot_ptr) {
     }
     
     if (opts.flags.verbose) {
-        kterm_write("kernel64 isr ptr (gp /pf): ");
-        kterm_write_ui32hx(isr_ptrs.gp_high);
-        kterm_write_ui32h(isr_ptrs.gp_low);
+        kterm_write("kernel64 isr ptr (gp/pf): ");
+        kterm_write_ui32hx(isr_ptrs.gp_low);
+        kterm_write_ui32h(isr_ptrs.gp_high);
         kterm_write("/");
-        kterm_write_ui32hx(isr_ptrs.pf_high);
-        kterm_write_ui32h(isr_ptrs.pf_low);
+        kterm_write_ui32hx(isr_ptrs.pf_low);
+        kterm_write_ui32h(isr_ptrs.pf_high);
         kterm_write_line();
     }
     
@@ -254,12 +254,10 @@ void kernel32_main(uint32_t multiboot_ptr) {
     kterm_write_line();
     
     //setup paging
-    
     if (mem32_setup_early_paging(&ptr, load_target, load_target2, opts.flags.verbose)) {
         kterm_write("[fail] error building page tables\n");
         kernel32_hang();
     }
-    
     
     
     /*

@@ -43,6 +43,6 @@ uint32_t kernel32_modules_ptr[2];
 void mod32_init();
 uint32_t mod32_register(mboot_modinfo_t *old_minfo, uint32_t verbose);
 void mod32_set_root_name(const char *name);
-void* mod32_load_k64(void* dest, uint32_t space, kernel64_isr_ptrs_t *isr_ptrs, uint32_t verbose);
+void* mod32_load_k64(void* dest, uint32_t space, kernel64_isr_ptrs_t *isr_ptrs, uint32_t *kmodnum, uint32_t verbose);
 
 #endif

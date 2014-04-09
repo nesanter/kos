@@ -12,7 +12,6 @@ SECTIONS
     
     .low_mem :
     {
-        *(.low_mem)
         *(.multiboot)
     }
     

@@ -42,6 +42,15 @@ void kterm_clear() {
 }
 
 void kterm_flush() {
+    
+    uint32_t poscopy = kterm_buffer_pos;
+    uint32_t nn = 79;
+    while (poscopy) {
+        kterm_header[nn] = 48 + poscopy % 10;
+        poscopy /= 10;
+        nn--;
+    }
+    
     volatile uint16_t *out = VGA_OUT_PTR;
     //write header line
     for (uint32_t i=0; i<VGA_WIDTH; i++)
@@ -59,8 +68,18 @@ void kterm_flush() {
                 out[col+row*VGA_WIDTH] = BLANK_CHAR;
             row++;
             col = 0;
-            if (row == VGA_HEIGHT_M1)
-                kernel32_hang();
+            if (row == VGA_HEIGHT-2) {
+                uint32_t advance = 2;
+                for (uint32_t ii=kterm_buffer_flushed_pos; ii<kterm_buffer_pos; ii++) {
+                    if (kterm_buffer[i] == '\n') {
+                        advance--;
+                        kterm_buffer_flushed_pos = ii+1;
+                        if (advance == 0)
+                            break;
+                    }
+                }
+                //kernel32_hang();
+            }
             
         } else {
             #if KTERM_WRAP
@@ -130,7 +149,7 @@ void kterm_write(const char *str) {
         char c = *str++;
         if (c == '\n') {
             kterm_buffer_linecount++;
-            if (kterm_buffer_linecount > VGA_HEIGHT_M1) {
+            if (kterm_buffer_linecount >= VGA_HEIGHT_M1) {
                 while ((kterm_buffer[++kterm_buffer_flushed_pos] & 0xFF) != '\n');
                 kterm_buffer_flushed_pos++;
             }
