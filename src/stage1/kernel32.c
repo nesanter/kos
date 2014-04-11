@@ -292,8 +292,8 @@ void kernel32_main(uint32_t multiboot_ptr) {
     
     if (opts.flags.verbose) {
         kterm_write("[note] calling kernel32_finalize\n");
-        kterm_write_ui32hx(cr3_new);
-        kterm_write_line();
+        //kterm_write_ui32hx(cr3_new);
+        //kterm_write_line();
         /*
         kterm_write_ui32hx(kernel32_modules_table[kmodnum].entry_low);
         kterm_write(":");

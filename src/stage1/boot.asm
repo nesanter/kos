@@ -85,29 +85,8 @@ kernel32_hang:
 
 kernel32_finalize:
 
-    ;jmp kernel32_hang
-
     mov esi, [esp+0x8] ;cr3_t
-    ;mov ebx, [esp+0x8] ;cr4_t
-    ;mov edx, [esp+0xC] ;cr0_t
     mov edi, [esp+0x4] ;kernel_handoff_t*
-    ;mov edx, [esp+0x10] ;void* (bootstrap64_low)
-    ;mov edx, edi
-    ;add edx, 0x8
-    ;mov bx, [edx]
-    ;mov [kernel32_gdt], bx
-    ;mov ebx, [edx+0x2]
-    ;mov [kernel32_gdt+2], ebx
-    ;mov ebx, [edx+0x6]
-    ;mov [kernel32_gdt+6], ebx
-    ;mov edx, edi
-    ;add edx, 0x1B
-    ;mov bx, [edx]
-    ;mov [kernel32_idt], bx
-    ;mov ebx, [edx+0x2]
-    ;mov [kernel32_idt+2], ebx
-    ;mov ebx, [edx+0x6]
-    ;mov [kernel32_idt+6], ebx
     
     ;enable PAE bit
     mov ebx, cr4
@@ -132,11 +111,8 @@ kernel32_finalize:
     or edx, 1 << 5 ;ne
     mov cr0, edx
     
-    ;mov edx, edi
-    ;add edx, 8
     lgdt [kernel32_gdt]
     
-    ;add edx, 10
     lidt [kernel32_idt]
     
     ;not really sure whether this is needed?
@@ -145,13 +121,3 @@ kernel32_finalize:
     mov gs, dx
     
     jmp 0x8:bootstrap64
-    
-    ;sub esp, 0x6
-    ;mov [esp], eax
-    ;mov dx, 0x8 ; (GDT[1] is ring 0 code)
-    ;mov [esp+0x4], dx
-    
-    ;far return to spoofed location
-    ;retf
-    ;this doesn't work because the entry to kernel64 is a 64-bit pointer
-    ;and we can only jump to lower-half addresses

@@ -194,8 +194,8 @@ uint32_t mem32_build_idt(idt_ptr_t *idt_ptr, void* dest, uint32_t *size, kernel6
 #define P_ATTR_GLOBAL (BIT_8)
 
 void make_entry(uint32_t *ptr, uint32_t entry, uint32_t addr_low, uint32_t addr_high, uint16_t attr, uint32_t nx) {
-    ptr[entry*2] = (addr_high & 0x7FFFFFFF) | (nx ? BIT_31 : 0);
-    ptr[entry*2+1] = (addr_low & 0xFFFFF000) | (attr & 0xFFF);
+    ptr[entry*2+1] = (addr_high & 0x7FFFFFFF) | (nx ? BIT_31 : 0);
+    ptr[entry*2] = (addr_low & 0xFFFFF000) | (attr & 0xFFF);
 }
 
 uint32_t mem32_setup_early_paging(void **page_table_ptr_ptr, void *kernel64_start, void *kernel64_end, uint32_t verbose) {
@@ -217,9 +217,11 @@ uint32_t mem32_setup_early_paging(void **page_table_ptr_ptr, void *kernel64_star
         pml4_ptr[i] = 0;
     }
     
-    kterm_write("pml4_ptr = ");
-    kterm_write_ui32hx(pml4_ptr);
-    kterm_write_line();
+    if (verbose) {
+        kterm_write("pml4_ptr = ");
+        kterm_write_ui32hx(pml4_ptr);
+        kterm_write_line();
+    }
     
     //recursive map
     make_entry(pml4_ptr, 511, (uint32_t)pml4_ptr, 0, P_ATTR_PRESENT | P_ATTR_READWRITE, 0);
@@ -289,7 +291,7 @@ uint32_t mem32_setup_early_paging(void **page_table_ptr_ptr, void *kernel64_star
     
     //make_entry(pt_ptr, 511, (uint32_t)pt_ptr, 0, P_ATTR_PRESENT | P_ATTR_READWRITE, 0);
     
-    pt_ptr += 0x1000;
+    pt_ptr = (uint32_t*)(((uint32_t)pt_ptr)+0x1000);
     for (uint32_t i=0; i<0x400; i++) {
         pt_ptr[i] = 0;
     }
@@ -298,9 +300,9 @@ uint32_t mem32_setup_early_paging(void **page_table_ptr_ptr, void *kernel64_star
     
     //make_entry(pt_ptr, 511, (uint32_t)pt_ptr, 0, P_ATTR_PRESENT | P_ATTR_READWRITE, 0);
     
-    uint32_t *pt_ptr2 = pt_ptr + 0x1000;
+    uint32_t *pt_ptr2 = (uint32_t*)(((uint32_t)pt_ptr) + 0x1000);
     
-    uint32_t pd = p2+1;
+    uint32_t pd = p2;
     uint32_t pmax = 512;
     uint32_t pn = 0;
     
@@ -312,7 +314,7 @@ uint32_t mem32_setup_early_paging(void **page_table_ptr_ptr, void *kernel64_star
         if (p == pmax) {
             pd++;
             pmax += 512;
-            pt_ptr2 += 0x1000;
+            pt_ptr2 = (uint32_t*)(((uint32_t)pt_ptr2)+0x1000);
             for (uint32_t i=0; i<0x400; i++) {
                 pt_ptr2[i] = 0;
             }
@@ -331,19 +333,21 @@ uint32_t mem32_setup_early_paging(void **page_table_ptr_ptr, void *kernel64_star
     }
     
     //finally identity map the first 0x20000 (2MB)
-    pt_ptr2 += 0x1000;
+    pt_ptr2 = (uint32_t*)(((uint32_t)pt_ptr2)+0x1000);
     
     make_entry(pml4_ptr, 0, (uint32_t)pt_ptr2, 0, P_ATTR_PRESENT | P_ATTR_READWRITE, 0);
     for (uint32_t i=0; i<0x400; i++) {
         pt_ptr2[i] = 0;
     }
+    
     make_entry(pt_ptr2, 0, ((uint32_t)pt_ptr2) + 0x1000, 0, P_ATTR_PRESENT | P_ATTR_READWRITE, 0);
-    pt_ptr2 += 0x1000;
+    pt_ptr2 = (uint32_t*)(((uint32_t)pt_ptr2)+0x1000);
     for (uint32_t i=0; i<0x400; i++) {
         pt_ptr2[i] = 0;
     }
+    
     make_entry(pt_ptr2, 0, ((uint32_t)pt_ptr2) + 0x1000, 0, P_ATTR_PRESENT | P_ATTR_READWRITE, 0);
-    pt_ptr2 += 0x1000;
+    pt_ptr2 = (uint32_t*)(((uint32_t)pt_ptr2)+0x1000);
     for (uint32_t i=0; i<0x200; i++) {
         make_entry(pt_ptr2, i, i*4096, 0, P_ATTR_PRESENT | P_ATTR_READWRITE, 0);
     }
