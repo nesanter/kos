@@ -42,7 +42,7 @@ void kterm_clear() {
 }
 
 void kterm_flush() {
-    
+    /*
     uint32_t poscopy = kterm_buffer_pos;
     uint32_t nn = 79;
     while (poscopy) {
@@ -50,7 +50,7 @@ void kterm_flush() {
         poscopy /= 10;
         nn--;
     }
-    
+    */
     volatile uint16_t *out = VGA_OUT_PTR;
     //write header line
     for (uint32_t i=0; i<VGA_WIDTH; i++)

@@ -251,6 +251,16 @@ void* mod32_load_k64(void *dest, uint32_t space, kernel64_isr_ptrs_t *isr_ptrs, 
                         isr_ptrs->pf_high = entry32[4];
                         isr_ptrs->pf_low = entry32[5];
                         
+                        uint32_t extra = entry32[7];
+                        
+                        kterm_write("[note] extra is ");
+                        kterm_write_ui32d(extra);
+                        kterm_write_line();
+                        
+                        for (uint32_t x=0; x<extra; x += 4) {
+                            bootstrap64[x] = entry[8+x];
+                        }
+                        
                         break;
                     }
                     
@@ -281,7 +291,8 @@ void* mod32_load_k64(void *dest, uint32_t space, kernel64_isr_ptrs_t *isr_ptrs, 
     //now we can load kernel64
     elf64_header_t *elf_header = (elf64_header_t*)(uint32_t)kernel32_modules_table[knum].addr;
     
-    kernel32_modules_table[knum].entry = elf_header->e_entry;
+    kernel32_modules_table[knum].entry_low = (uint32_t)(elf_header->e_entry & 0xFFFFFFFF);
+    kernel32_modules_table[knum].entry_high = (uint32_t)(elf_header->e_entry >> 32);
         
     void *ptr = (void*)((void*)elf_header + (uint32_t)elf_header->e_phoff);
         

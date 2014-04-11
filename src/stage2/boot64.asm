@@ -21,12 +21,25 @@ _start:
     jmp .hang
 
 isr_gp_fn:
-    iretq
+    cli
+.hang:
+    hlt
+    jmp .hang
 
 isr_pf_fn:
-    iretq
-    
+    cli
+.hang:
+    hlt
+    jmp .hang
+
+EXTRA_SIZE equ extra_end-extra_begin
+
 section .k64isr progbits noexec nowrite noalloc align=8
     db 0xFF,'ISRPTRS'
     dq isr_gp_fn
     dq isr_pf_fn
+    dd 0, EXTRA_SIZE
+extra_begin:
+    jmp _start
+extra_end:
+    dq 0x0

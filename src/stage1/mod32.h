@@ -26,7 +26,8 @@ typedef struct _modinfo_flags {
 typedef struct _modinfo {
     uint32_t addr;
     uint32_t size;
-    uint32_t entry;
+    uint32_t entry_low;
+    uint32_t entry_high;
     char name[KERNEL32_MAX_MOD_NAME_LENGTH + 1];
     char opts[KERNEL32_MAX_MOD_OPT_LENGTH + 1];
     modinfo_flags_t flags;

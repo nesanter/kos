@@ -25,6 +25,7 @@
  */
 extern void kernel32_hang();
 extern uint16_t kernel32_error_code;
+extern uint32_t* bootstrap64;
 
 /*
  *  kernel32_cmdline_t: information extracted from multiboot cmdline
@@ -35,6 +36,6 @@ typedef struct _kernel32_cmdline {
     kernel_cmdline_flags_t flags; //defined in handoff.h
 } kernel32_cmdline_t;
 
-void* kernel32_bootstrap64_ptr;
+//void* kernel32_bootstrap64_ptr;
 
 #endif

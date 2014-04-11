@@ -18,7 +18,13 @@ uint32_t parse_cmdline(const char *cmdline, kernel32_cmdline_t *opts);
 uint32_t check_long_mode_capable();
 uint32_t check_tagged_tlb();
 
-extern void kernel32_finalize(void *bootstrap_ptr, void* handoff_ptr, cr0_t cr0_new, cr4_t cr4_new, uint32_t cr3_new);
+//extern void kernel32_finalize(void *bootstrap_ptr_low, void* bootstrap_ptr_high,
+//    void* handoff_ptr, cr0_t cr0_new, cr4_t cr4_new, uint32_t cr3_new);
+//extern void kernel32_finalize(void* handoff_ptr, cr0_t cr0_new, cr4_t cr4_new, uint32_t cr3_new);
+extern void kernel32_finalize(void* handoff_ptr, /*cr0_t cr0_new, cr4_t cr4_new,*/ uint32_t cr3_new);
+
+extern gdt_ptr_t kernel32_gdt;
+extern idt_ptr_t kernel32_idt;
 
 void kernel32_main(uint32_t multiboot_ptr) {
     kterm_initialize();
@@ -227,7 +233,7 @@ void kernel32_main(uint32_t multiboot_ptr) {
     //setup gdt
     
     uint32_t sz;
-    if (mem32_build_gdt(&handoff->gdt_ptr, ptr, &sz)) {
+    if (mem32_build_gdt(&kernel32_gdt, ptr, &sz)) {
         kterm_write("[fail] error building gdt\n");
         kernel32_hang();
     }
@@ -240,7 +246,7 @@ void kernel32_main(uint32_t multiboot_ptr) {
     kterm_write_ui32d(sz);
     kterm_write_line();
     
-    if (mem32_build_idt(&handoff->idt_ptr, ptr, &sz, &isr_ptrs)) {
+    if (mem32_build_idt(&kernel32_idt, ptr, &sz, &isr_ptrs)) {
         kterm_write("[fail] error building idt\n");
         kernel32_hang();
     }
@@ -260,12 +266,17 @@ void kernel32_main(uint32_t multiboot_ptr) {
     }
     
     
-    /*
     uint32_t cr3_new = (uint32_t)ptr;
     
+    /*
     //setup new values of cr0/cr4
     cr0_t cr0_new = read_cr0();
     cr4_t cr4_new = read_cr4();
+    
+    //if (sizeof(cr0_t) != 4)
+    //    kterm_write("bad size cr0");
+    //if (sizeof(cr4_t) != 4)
+    //    kterm_write("bad size cr4");
     
     cr0_new.mp = 1;
     cr0_new.em = 0;
@@ -274,24 +285,30 @@ void kernel32_main(uint32_t multiboot_ptr) {
     cr4_new.pae = 1;
     cr4_new.osfxsr = 1;
     cr4_new.osxmmexcpt = 1;
-    
+    */
     //now we're ready!
     
     //void *bootstrap_ptr = (void*)((ksym_table_32_t*)load_target)->bootstrap64_ptr;
     
-    void *bootstrap_ptr = (void*)(kernel32_modules_table[kmodnum].entry);
-    
     if (opts.flags.verbose) {
-        kterm_write("[note] calling kernel32_finalize(");
-        kterm_write_ui32hx(bootstrap_ptr);
+        kterm_write("[note] calling kernel32_finalize\n");
+        kterm_write_ui32hx(cr3_new);
+        kterm_write_line();
+        /*
+        kterm_write_ui32hx(kernel32_modules_table[kmodnum].entry_low);
+        kterm_write(":");
+        kterm_write_ui32h(kernel32_modules_table[kmodnum].entry_high);
         kterm_write(", ");
         kterm_write_ui32hx(load_target2);
         kterm_write(")");
         kterm_write_line();
+        */
     }
     
-    kernel32_finalize(bootstrap_ptr, load_target2, cr0_new, cr4_new, cr3_new);
-    */
+    //kernel32_finalize(kernel32_modules_table[kmodnum].entry_low,
+    //    kernel32_modules_table[kmodnum].entry_high, load_target2,
+    //    cr0_new, cr4_new, cr3_new);
+    kernel32_finalize(load_target2, /*cr0_new, cr4_new,*/ cr3_new);
 }
 
 uint32_t check_long_mode_capable() {
