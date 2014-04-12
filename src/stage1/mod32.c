@@ -257,8 +257,14 @@ void* mod32_load_k64(void *dest, uint32_t space, kernel64_isr_ptrs_t *isr_ptrs, 
                         kterm_write_ui32d(extra);
                         kterm_write_line();
                         
-                        for (uint32_t x=0; x<extra; x += 4) {
-                            bootstrap64[x] = entry[8+x];
+                        kterm_write("[note] bootstrap64 is ");
+                        kterm_write_ui32hx(kernel32_bootstrap64);
+                        kterm_write_line();
+                        
+                        for (uint32_t x=0; x<extra; x++) {
+                            kterm_write_ui32hx(entry[8+x]);
+                            kterm_write_line();
+                            kernel32_bootstrap64[x] = entry[8+x];
                         }
                         
                         break;

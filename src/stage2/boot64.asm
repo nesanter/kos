@@ -32,7 +32,7 @@ isr_pf_fn:
     hlt
     jmp .hang
 
-EXTRA_SIZE equ extra_end-extra_begin
+EXTRA_SIZE equ (extra_end-extra_begin)/4
 
 section .k64isr progbits noexec nowrite noalloc align=8
     db 0xFF,'ISRPTRS'
@@ -40,6 +40,8 @@ section .k64isr progbits noexec nowrite noalloc align=8
     dq isr_pf_fn
     dd 0, EXTRA_SIZE
 extra_begin:
-    jmp _start
+    db 0xF4
+    db 0xE9,0xB3,0xEF,0xFF,0xFF
+align 4, db 0
 extra_end:
-    dq 0x0
+    dq 0xFFFFFFFF

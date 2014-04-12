@@ -6,6 +6,7 @@
 
 /* GDT */
 
+/*
 typedef struct _gdt_segment {
     uint16_t limit_low;
     uint16_t base_low;
@@ -22,6 +23,16 @@ typedef struct _gdt_segment {
     uint8_t l:1;
     uint8_t db:1;
     uint8_t g:1;
+    uint8_t base_high;
+} __attribute__((packed)) gdt_segment_t;
+*/
+
+typedef struct _gdt_segment {
+    uint16_t limit_low;
+    uint16_t base_low;
+    uint8_t base_mid;
+    uint8_t attr0;
+    uint8_t attr1;
     uint8_t base_high;
 } __attribute__((packed)) gdt_segment_t;
 
@@ -76,30 +87,119 @@ void* mem32_pick_target() {
     return (void*)ADJUST_PTR(kernel32_modules_ptr[1], K64_MULTIPLE);
 }
 
+#define GDT_PRESENT BIT_7
+#define GDT_DPL_0 0
+#define GDT_DPL_3 (BIT_6 | BIT_5)
+#define GDT_NOTSYSTEM BIT_4
+#define GDT_TYPE_C BIT_3
+#define GDT_TYPE_E BIT_2
+#define GDT_TYPE_W BIT_1
+#define GDT_TYPE_A BIT_0
+#define GDT_LONG BIT_13
+#define GDT_G BIT_15
+
+
 uint32_t mem32_build_gdt(gdt_ptr_t *gdt_ptr, void* dest, uint32_t *size) {
     if ((uint32_t)dest % 8)
         return 1;
     
+    /*
     gdt_segment_t *gdt_table = (gdt_segment_t*)dest;
     
     gdt_segment_t seg_zero = {0};
     gdt_table[0] = seg_zero;
     
     gdt_segment_t seg = {.limit_low = 0xFFFF, .base_low = 0x0000, .base_mid = 0x00,
-                         .type_a = 0, .type_w = 1, .type_e = 0, .type_c = 1, .system = 0,
+                         .type_a = 0, .type_w = 1, .type_e = 0, .type_c = 1, .system = 1,
                          .dpl = 0, .present = 1, .limit_high = 0xF, ._unused = 0,
                          .l = 1, .db = 0, .g = 1, .base_high = 0x00};
     gdt_table[1] = seg;
     
-    seg.type_c = 1;
+    seg.type_c = 0;
     gdt_table[2] = seg;
     
-    seg.type_c = 0;
+    seg.type_c = 1;
     seg.dpl = 3;
     gdt_table[3] = seg;
     
-    seg.type_c = 1;
+    seg.type_c = 0;
     gdt_table[4] = seg;
+    */
+    /*
+    uint16_t *gdt_table = (uint16_t*)dest;
+    
+    gdt_table[0] = 0;
+    gdt_table[1] = 0;
+    gdt_table[2] = 0;
+    gdt_table[3] = 0;
+    
+    gdt_table[4] = 0xFFFF;
+    gdt_table[5] = 0x0000;
+    gdt_table[6] = GDT_PRESENT | GDT_DPL_0 | GDT_NOTSYSTEM | GDT_TYPE_C | GDT_TYPE_W;
+    gdt_table[7] = 0x00F0 | GDT_LONG | GDT_G;
+    
+    gdt_table[8] = 0xFFFF;
+    gdt_table[9] = 0x0000;
+    gdt_table[10] = GDT_PRESENT | GDT_DPL_0 | GDT_NOTSYSTEM | GDT_TYPE_W;
+    gdt_table[11] = 0x00F0 | GDT_LONG | GDT_G;
+    
+    gdt_table[12] = 0xFFFF;
+    gdt_table[13] = 0x0000;
+    gdt_table[14] = GDT_PRESENT | GDT_DPL_3 | GDT_NOTSYSTEM | GDT_TYPE_C | GDT_TYPE_W;
+    gdt_table[15] = 0x00F0 | GDT_LONG | GDT_G;
+    
+    gdt_table[16] = 0xFFFF;
+    gdt_table[17] = 0x0000;
+    gdt_table[18] = GDT_PRESENT | GDT_DPL_3 | GDT_NOTSYSTEM | GDT_TYPE_W;
+    gdt_table[19] = 0x00F0 | GDT_LONG | GDT_G;
+    
+    gdt_ptr->limit = (sizeof(gdt_segment_t) * 5) - 1;
+    gdt_ptr->base_low = (uint32_t)dest;
+    gdt_ptr->base_high = 0x00000000;
+    */
+    
+    gdt_segment_t *gdt_table = (gdt_segment_t*)dest;
+    
+    gdt_segment_t seg_zero = {0};
+    gdt_table[0] = seg_zero;
+    
+    gdt_segment_t code0 = {
+        .limit_low = 0xFFFF,
+        .base_low = 0x0000,
+        .base_mid = 0x00,
+        .attr0 = 0b10011000,
+        .attr1 = 0b10101111,
+        .base_high = 0x00
+    };
+    gdt_segment_t data0 = {
+        .limit_low = 0xFFFF,
+        .base_low = 0x0000,
+        .base_mid = 0x00,
+        .attr0 = 0b10010010,
+        .attr1 = 0b10101111,
+        .base_high = 0x00
+    };
+    gdt_segment_t code3 = {
+        .limit_low = 0xFFFF,
+        .base_low = 0x0000,
+        .base_mid = 0x00,
+        .attr0 = 0b11111000,
+        .attr1 = 0b10101111,
+        .base_high = 0x00
+    };
+    gdt_segment_t data3 = {
+        .limit_low = 0xFFFF,
+        .base_low = 0x0000,
+        .base_mid = 0x00,
+        .attr0 = 0b11110010,
+        .attr1 = 0b10101111,
+        .base_high = 0x00
+    };
+    
+    gdt_table[1] = code0;
+    gdt_table[2] = data0;
+    gdt_table[3] = code3;
+    gdt_table[4] = data3;
     
     gdt_ptr->limit = (sizeof(gdt_segment_t) * 5) - 1;
     gdt_ptr->base_low = (uint32_t)dest;

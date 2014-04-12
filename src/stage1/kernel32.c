@@ -21,12 +21,13 @@ uint32_t check_tagged_tlb();
 //extern void kernel32_finalize(void *bootstrap_ptr_low, void* bootstrap_ptr_high,
 //    void* handoff_ptr, cr0_t cr0_new, cr4_t cr4_new, uint32_t cr3_new);
 //extern void kernel32_finalize(void* handoff_ptr, cr0_t cr0_new, cr4_t cr4_new, uint32_t cr3_new);
-extern void kernel32_finalize(void* handoff_ptr, /*cr0_t cr0_new, cr4_t cr4_new,*/ uint32_t cr3_new);
+extern void kernel32_finalize(void* handoff_ptr, /*cr0_t cr0_new, cr4_t cr4_new,*/ uint32_t cr3_new,
+    uint32_t gdt_base_low, uint16_t gdt_limit, uint32_t idt_base_low, uint16_t idt_limit);
 
-extern gdt_ptr_t kernel32_gdt;
-extern idt_ptr_t kernel32_idt;
+//extern gdt_ptr_t kernel32_gdt;
+//extern idt_ptr_t kernel32_idt;
 
-void kernel32_main(uint32_t multiboot_ptr) {
+void kernel32_main(uint32_t multiboot_ptr, uint32_t *bootstrap_ptr) {
     kterm_initialize();
     
     //step 1: sanity check
@@ -44,6 +45,8 @@ void kernel32_main(uint32_t multiboot_ptr) {
     } else {
         kterm_write("[note] sanity check passed: process context identifiers supported\n");
     }
+    
+    kernel32_bootstrap64 = bootstrap_ptr;
     
     //Since we have long mode:
     //kernel32_enable_sse();
@@ -232,8 +235,11 @@ void kernel32_main(uint32_t multiboot_ptr) {
     
     //setup gdt
     
+    gdt_ptr_t gdt_ptr;
+    idt_ptr_t idt_ptr;
+    
     uint32_t sz;
-    if (mem32_build_gdt(&kernel32_gdt, ptr, &sz)) {
+    if (mem32_build_gdt(&gdt_ptr, ptr, &sz)) {
         kterm_write("[fail] error building gdt\n");
         kernel32_hang();
     }
@@ -246,7 +252,7 @@ void kernel32_main(uint32_t multiboot_ptr) {
     kterm_write_ui32d(sz);
     kterm_write_line();
     
-    if (mem32_build_idt(&kernel32_idt, ptr, &sz, &isr_ptrs)) {
+    if (mem32_build_idt(&idt_ptr, ptr, &sz, &isr_ptrs)) {
         kterm_write("[fail] error building idt\n");
         kernel32_hang();
     }
@@ -304,11 +310,32 @@ void kernel32_main(uint32_t multiboot_ptr) {
         kterm_write_line();
         */
     }
-    
+    /*
+    kterm_write("bootstrap64 dump, ptr=");
+    kterm_write_ui32hx(kernel32_bootstrap64);
+    kterm_write_line();
+    for (uint32_t i=0; i<16; i++) {
+        if (i % 3 == 2)
+            kterm_write_line();
+        kterm_write_ui8h(((uint8_t*)kernel32_bootstrap64)[i]);
+    }
+    kterm_write_line();
+    */
     //kernel32_finalize(kernel32_modules_table[kmodnum].entry_low,
     //    kernel32_modules_table[kmodnum].entry_high, load_target2,
     //    cr0_new, cr4_new, cr3_new);
-    kernel32_finalize(load_target2, /*cr0_new, cr4_new,*/ cr3_new);
+    
+    kterm_write_ui32hx(gdt_ptr.base_low);
+    kterm_write(" ");
+    kterm_write_ui16hx(gdt_ptr.limit);
+    kterm_write(" ");
+    kterm_write_ui32hx(idt_ptr.base_low);
+    kterm_write(" ");
+    kterm_write_ui16hx(idt_ptr.limit);
+    kterm_write_line();
+    
+    kernel32_finalize(load_target2, /*cr0_new, cr4_new,*/ cr3_new, gdt_ptr.base_low,
+        gdt_ptr.limit, idt_ptr.base_low, idt_ptr.limit);
 }
 
 uint32_t check_long_mode_capable() {

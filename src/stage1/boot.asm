@@ -15,12 +15,11 @@ align 4
     dd FLAGS
     dd CHECKSUM
     
-section .low_mem progbits noalloc exec write
-global bootstrap64
+section .low_mem progbits alloc exec write
 align 8
 bootstrap64:
     times 64 db 0
-    
+
 section .bootstrap_stack progbits noalloc noexec write
 align 4
 stack_bottom:
@@ -28,7 +27,7 @@ stack_bottom:
 stack_top:
 
 section .data
-global kernel32_error_code, kernel32_gdt, kernel32_idt
+global kernel32_error_code
 align 4
 kernel32_error_code:
     dw 0x403
@@ -52,6 +51,8 @@ _start:
     mov esp, stack_top
     sub esp, 0x8
     mov [esp], ebx ;save multiboot pointer
+    mov ebx, bootstrap64
+    mov [esp+0x4], ebx ;pass bootstrap64
     
     extern kernel32_main
     call kernel32_main
@@ -85,6 +86,18 @@ kernel32_hang:
 
 kernel32_finalize:
 
+    mov ax, [esp+0x18] ;idt size
+    mov ebx, [esp+0x14] ;idt ptr low
+    
+    mov [kernel32_idt], ax
+    mov [kernel32_idt+0x2], ebx
+    
+    mov ax, [esp+0x10] ;gdt size
+    mov ebx, [esp+0xC] ;gdt ptr low
+    
+    mov [kernel32_gdt], ax
+    mov [kernel32_gdt+0x2], ebx
+    
     mov esi, [esp+0x8] ;cr3_t
     mov edi, [esp+0x4] ;kernel_handoff_t*
     
@@ -120,4 +133,4 @@ kernel32_finalize:
     mov fs, dx
     mov gs, dx
     
-    jmp 0x8:bootstrap64
+    jmp 0x8:bootstrap64 

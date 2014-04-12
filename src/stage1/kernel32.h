@@ -25,7 +25,7 @@
  */
 extern void kernel32_hang();
 extern uint16_t kernel32_error_code;
-extern uint32_t* bootstrap64;
+uint32_t* kernel32_bootstrap64;
 
 /*
  *  kernel32_cmdline_t: information extracted from multiboot cmdline
