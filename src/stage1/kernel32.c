@@ -22,7 +22,8 @@ uint32_t check_tagged_tlb();
 //    void* handoff_ptr, cr0_t cr0_new, cr4_t cr4_new, uint32_t cr3_new);
 //extern void kernel32_finalize(void* handoff_ptr, cr0_t cr0_new, cr4_t cr4_new, uint32_t cr3_new);
 extern void kernel32_finalize(void* handoff_ptr, /*cr0_t cr0_new, cr4_t cr4_new,*/ uint32_t cr3_new,
-    uint32_t gdt_base_low, uint16_t gdt_limit, uint32_t idt_base_low, uint16_t idt_limit);
+    uint32_t gdt_base_low, uint16_t gdt_limit, uint32_t idt_base_low, uint16_t idt_limit,
+    uint32_t entry_high, uint32_t entry_low);
 
 //extern gdt_ptr_t kernel32_gdt;
 //extern idt_ptr_t kernel32_idt;
@@ -188,6 +189,8 @@ void kernel32_main(uint32_t multiboot_ptr, uint32_t *bootstrap_ptr) {
         kterm_write_ui32h(isr_ptrs.pf_high);
         kterm_write_line();
     }
+    uint32_t entry_high = kernel32_modules_table[kmodnum].entry_high;
+    uint32_t entry_low = kernel32_modules_table[kmodnum].entry_low;
     
     //populate handoff
     
@@ -324,7 +327,7 @@ void kernel32_main(uint32_t multiboot_ptr, uint32_t *bootstrap_ptr) {
     //kernel32_finalize(kernel32_modules_table[kmodnum].entry_low,
     //    kernel32_modules_table[kmodnum].entry_high, load_target2,
     //    cr0_new, cr4_new, cr3_new);
-    
+    /*
     kterm_write_ui32hx(gdt_ptr.base_low);
     kterm_write(" ");
     kterm_write_ui16hx(gdt_ptr.limit);
@@ -333,9 +336,10 @@ void kernel32_main(uint32_t multiboot_ptr, uint32_t *bootstrap_ptr) {
     kterm_write(" ");
     kterm_write_ui16hx(idt_ptr.limit);
     kterm_write_line();
-    
+    */
     kernel32_finalize(load_target2, /*cr0_new, cr4_new,*/ cr3_new, gdt_ptr.base_low,
-        gdt_ptr.limit, idt_ptr.base_low, idt_ptr.limit);
+        gdt_ptr.limit, idt_ptr.base_low, idt_ptr.limit,
+        entry_high, entry_low);
 }
 
 uint32_t check_long_mode_capable() {

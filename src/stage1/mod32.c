@@ -250,7 +250,7 @@ void* mod32_load_k64(void *dest, uint32_t space, kernel64_isr_ptrs_t *isr_ptrs, 
                         isr_ptrs->gp_low = entry32[3];
                         isr_ptrs->pf_high = entry32[4];
                         isr_ptrs->pf_low = entry32[5];
-                        
+                        /*
                         uint32_t extra = entry32[7];
                         
                         kterm_write("[note] extra is ");
@@ -260,13 +260,14 @@ void* mod32_load_k64(void *dest, uint32_t space, kernel64_isr_ptrs_t *isr_ptrs, 
                         kterm_write("[note] bootstrap64 is ");
                         kterm_write_ui32hx(kernel32_bootstrap64);
                         kterm_write_line();
-                        
+                        */
+                        /*
                         for (uint32_t x=0; x<extra; x++) {
                             kterm_write_ui32hx(entry[8+x]);
                             kterm_write_line();
                             kernel32_bootstrap64[x] = entry[8+x];
                         }
-                        
+                        */
                         break;
                     }
                     

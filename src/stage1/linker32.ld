@@ -13,7 +13,6 @@ SECTIONS
     .low_mem :
     {
         *(.multiboot)
-        *(.low_mem)
     }
     
     .text BLOCK(4096) :
