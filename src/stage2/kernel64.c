@@ -1,8 +1,8 @@
 #include "handoff.h"
-
+#include "early_kterm.h"
 
 void kernel64_main(uint32_t handoff_ptr) {
-    volatile uint16_t *out = (uint16_t*)0xB8000;
+    ekterm_initialize();
     
-    out[1] = 0x401;
+    ekterm_write("hello, world!");
 }

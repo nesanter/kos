@@ -1,9 +1,10 @@
 #include "handoff.h"
+#include "palloc.h"
 
 typedef struct _pmap {
     void *start;
-    void* end;
-    struct _pmap next;
+    void *end;
+    struct _pmap *next;
 } pmap_t;
 
 pmap_t *palloc_map; //linked list
@@ -18,8 +19,8 @@ uint64_t palloc_init(void *dest, mmap_entry_t *mmap, uint64_t mmap_entries,
     pmap_t *tail = palloc_map;
     
     for (uint64_t i=0; i<mmap_entries; i++) {
-        tail->start = mmap[i].address;
-        tail->end = mmap[i].address + mmap[i].size;
+        tail->start = (void*)mmap[i].address;
+        tail->end = (void*)mmap[i].address + mmap[i].length;
         if (i+1<mmap_entries) {
             tail->next = (pmap_t*)(tail+1);
         } else {
@@ -29,8 +30,8 @@ uint64_t palloc_init(void *dest, mmap_entry_t *mmap, uint64_t mmap_entries,
     }
     
     for (uint64_t i=0; i<reserved_entries; i++) {
-        for (uint64_t i=0; i<reserved[i].size; i+=0x1000) {
-            if (preserve(reserved[i].address+i))
+        for (uint64_t i=0; i<reserved[i].length; i+=0x1000) {
+            if (preserve((void*)reserved[i].address+i)) {
                 return 1;
             }
         }
@@ -81,10 +82,10 @@ uint64_t pfree(void **ptrs, uint64_t num_pages) {
         pmap_t b = {.start = ptrs[i], .end = ptrs[i]+0x1000};
     
         for (i++; i<num_pages; i++) {
-            if (p.start - ptrs[i] == 0x1000) {
-                p.start -= 0x1000;
-            } else if (ptrs[i] - p.end == 0x1000) {
-                p.end += 0x1000;
+            if (b.start - ptrs[i] == 0x1000) {
+                b.start -= 0x1000;
+            } else if (ptrs[i] - b.end == 0x1000) {
+                b.end += 0x1000;
             } else {
                 break;
             }
@@ -95,18 +96,18 @@ uint64_t pfree(void **ptrs, uint64_t num_pages) {
         
         while (p) {
             
-            if (p->start = b.end) {
+            if (p->start == b.end) {
                 //place before
                 p->start = b.start;
                 break;
             }
-            if (p->end = b.start) {
+            if (p->end == b.start) {
                 //place after
                 p->end = b.end;
                 //check for merge
                 if (p->next) {
-                    if (p->next.start <= p->end) {
-                        p->end = p->next.end;
+                    if (p->next->start <= p->end) {
+                        p->end = p->next->end;
                         p->next = p->next->next;
                         if (!p->next) {
                             //block removed was last
@@ -190,7 +191,7 @@ uint64_t preserve(void *ptr) {
                 }
                 
                 newp->end = p->end;
-                p->end = (ptr & 0xFFFFFFFFFFFFF000);
+                p->end = (void*)((uint64_t)ptr & 0xFFFFFFFFFFFFF000);
                 newp->start = p->end + 0x1000;
                 
                 newp->next = p->next;
