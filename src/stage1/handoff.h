@@ -29,11 +29,13 @@ typedef struct _kernel_handoff {
     uint32_t magic[2];
     //gdt_ptr_t gdt_ptr;
     //idt_ptr_t idt_ptr;
-    kernel_cmdline_flags_t flags;
     mmap_entry_t mmap[KERNEL32_MAX_MMAP_ENTRIES];
+    mmap_entry_t reserved[KERNEL32_MAX_RESERVED_ENTRIES];
     modinfo_t mod_table[KERNEL32_MAX_BOOT_MODULES];
     uint32_t mmap_entry_num;
+    uint32_t reserved_entry_num;
     uint32_t mod_entry_num;
+    kernel_cmdline_flags_t flags;
 } kernel_handoff_t;
 
 #define HANDOFF_T_PAGESIZE ((sizeof(kernel_handoff_t) % 4096) ? (sizeof(kernel_handoff_t) / 4096 + 1) : (sizeof(kernel_handoff_t) / 4096))

@@ -7,6 +7,8 @@ echo "#ifdef __MODE_KERNEL32
 #ifndef _KERNEL32_COMPAT_H
 #define _KERNEL32_COMPAT_H
 
+typedef uint64_t bits64_t;
+
 " > src/$M/kernel32_compat.h
 
 #search path is hardcoded, oh well...

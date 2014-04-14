@@ -72,7 +72,7 @@ void ekterm_write_char(char c) {
 void ekterm_write(const char *str) {
     while (1) {
         char c = *str++;
-        if (c == 0)
+        if (c == '\0')
             break;
         ekterm_write_char(c);
     }
@@ -80,7 +80,7 @@ void ekterm_write(const char *str) {
 
 void ekterm_write_hex(uint64_t n, uint64_t dig) {
     char str[17];
-    str[dig+1] = '\0';
+    str[dig] = '\0';
     while (dig--) {
         str[dig] = asciify((n & 0xF));
         n >>= 4;
@@ -97,7 +97,7 @@ void ekterm_write_dec(uint64_t n) {
         tmp /= 10;
     }
     
-    str[dig+1] = '\0';
+    str[dig] = '\0';
     while (dig--) {
         str[dig] = asciify((n % 10));
         n /= 10;
@@ -120,7 +120,7 @@ void ekterm_write_sdec(int64_t n) {
         tmp /= 10;
     }
     
-    str[dig+1] = '\0';
+    str[dig] = '\0';
     while (dig--) {
         str[dig] = asciify((n % 10));
         n /= 10;
@@ -131,7 +131,7 @@ void ekterm_write_sdec(int64_t n) {
 
 void ekterm_write_bin(uint64_t n, uint64_t dig) {
     char str[65];
-    str[dig+1] = '\0';
+    str[dig] = '\0';
     while (dig--) {
         str[dig] = asciify((n & 0x1));
         n >>= 1;

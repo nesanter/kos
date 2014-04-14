@@ -122,7 +122,6 @@ void* mod32_load_k64(void *dest, uint32_t space, kernel64_isr_ptrs_t *isr_ptrs, 
     //dest += sizeof(ksym_table_32_t);
     //dest += (4096 - (uint32_t)dest % 4096);
     
-    
     void* destmax = dest + space;
     
     uint32_t knum = (uint32_t)-1;
@@ -246,10 +245,10 @@ void* mod32_load_k64(void *dest, uint32_t space, kernel64_isr_ptrs_t *isr_ptrs, 
                             return NULL;
                         }
                         
-                        isr_ptrs->gp_high = entry32[2];
-                        isr_ptrs->gp_low = entry32[3];
-                        isr_ptrs->pf_high = entry32[4];
-                        isr_ptrs->pf_low = entry32[5];
+                        isr_ptrs->gp_high = entry32[3];
+                        isr_ptrs->gp_low = entry32[2];
+                        isr_ptrs->pf_high = entry32[5];
+                        isr_ptrs->pf_low = entry32[4];
                         /*
                         uint32_t extra = entry32[7];
                         

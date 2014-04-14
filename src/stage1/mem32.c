@@ -71,10 +71,28 @@ uint32_t mmap_build(uint32_t multiboot_raw_ptr, uint32_t verbose) {
         }
         
         if (raw_entry.type == 1) {
+            /*
             entry.address = (uint64_t)raw_entry.addr_l | ((uint64_t)raw_entry.addr_h << 32);
             entry.length = (uint64_t)raw_entry.len_l | ((uint64_t)raw_entry.len_h << 32);
+            */
+            entry.address.l = raw_entry.addr_l;
+            entry.address.h = raw_entry.addr_h;
+            entry.length.l = raw_entry.len_l;
+            entry.length.h = raw_entry.len_h;
             mmap[mmap_entry_count++] = entry;
         }
+    }
+    
+    for (uint32_t i=0; i<mmap_entry_count; i++) {
+        kterm_write("mmap[");
+        kterm_write_ui32d(i);
+        kterm_write("] ");
+        kterm_write_ui32hx(mmap[i].address.h);
+        kterm_write_ui32h(mmap[i].address.l);
+        kterm_write(" ");
+        kterm_write_ui32hx(mmap[i].length.h);
+        kterm_write_ui32h(mmap[i].length.l);
+        kterm_write_line();
     }
     
     return 0;
@@ -226,7 +244,7 @@ uint32_t mem32_build_idt(idt_ptr_t *idt_ptr, void* dest, uint32_t *size, kernel6
         .offset_low = 0xFFFF & isr_ptrs->gp_low,
         .selector = 0x8,
         .ist = 0,
-        .type = 0b10000110,
+        .type = 0b10001110,
         .offset_middle = (0xFFFF0000 & isr_ptrs->gp_low) >> 16,
         .offset_high = isr_ptrs->gp_high,
         .zero = 0
@@ -236,7 +254,7 @@ uint32_t mem32_build_idt(idt_ptr_t *idt_ptr, void* dest, uint32_t *size, kernel6
         .offset_low = 0xFFFF & isr_ptrs->pf_low,
         .selector = 0x8,
         .ist = 0,
-        .type = 0b10000110,
+        .type = 0b10001110,
         .offset_middle = (0xFFFF0000 & isr_ptrs->pf_low) >> 16,
         .offset_high = isr_ptrs->pf_high,
         .zero = 0
@@ -298,7 +316,7 @@ void make_entry(uint32_t *ptr, uint32_t entry, uint32_t addr_low, uint32_t addr_
     ptr[entry*2] = (addr_low & 0xFFFFF000) | (attr & 0xFFF);
 }
 
-uint32_t mem32_setup_early_paging(void **page_table_ptr_ptr, void *kernel64_start, void *kernel64_end, uint32_t verbose) {
+uint32_t mem32_setup_early_paging(void **page_table_ptr_ptr, void **end_ptr, void *kernel64_start, void *kernel64_end, uint32_t verbose) {
     
     uint32_t *pml4_ptr;
     
@@ -465,6 +483,8 @@ uint32_t mem32_setup_early_paging(void **page_table_ptr_ptr, void *kernel64_star
         //kterm_write_line();
     }
     
+    *end_ptr = pt_ptr2+0x1000;
+    
     return 0;
 }
 
@@ -530,7 +550,15 @@ uint32_t mem32_map_page(void* page_table, uint32_t virtual_low, uint32_t virtual
 */
 uint32_t mem32_check(uint32_t addr, uint32_t size) {
     for (uint32_t i=0; i<mmap_entry_count; i++) {
+        /*
         if (mmap[i].address <= addr && addr+size <= mmap[i].address + mmap[i].length) {
+            return 0;
+        }
+        */
+        if (mmap[i].address.h == 0x0 && mmap[i].address.l <= addr &&
+            (addr+size <= mmap[i].address.l + mmap[i].length.l ||
+             mmap[i].length.h > 0))
+        {
             return 0;
         }
     }
@@ -539,9 +567,25 @@ uint32_t mem32_check(uint32_t addr, uint32_t size) {
 }
 
 uint32_t mem32_space(uint32_t addr) {
+    kterm_write("test space @ ");
+    kterm_write_ui32hx(addr);
+    kterm_write_line();
     for (uint32_t i=0; i<mmap_entry_count; i++) {
+        /*
         if (mmap[i].address <= addr && addr <= mmap[i].address + mmap[i].length) {
             return (mmap[i].length - (addr - mmap[i].address));
+        }
+        */
+        if (mmap[i].address.h == 0x0 && mmap[i].address.l <= addr) {
+            if (mmap[i].length.h > 0) {
+                return 0xFFFFFFFF - addr;
+            } else {
+                if (0xFFFFFFFF - mmap[i].address.l > mmap[i].length.l) {
+                    return 0xFFFFFFFF - addr;
+                } else if (addr <= mmap[i].address.l + mmap[i].length.l) {
+                    return mmap[i].length.l - (addr - mmap[i].address.l);
+                }
+            }
         }
     }
     return 0;

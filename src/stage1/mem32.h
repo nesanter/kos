@@ -10,13 +10,22 @@
 
 #include "mboot32.h"
 
+typedef struct _bits64 {
+    uint32_t l,h;
+} bits64_t;
+
 //##KERNEL32_COMPAT_START
 
 #define KERNEL32_MAX_MMAP_ENTRIES 16
+#define KERNEL32_MAX_RESERVED_ENTRIES 2
 
 typedef struct _mmap_entry {
+    /*
     uint64_t address;
     uint64_t length;
+    */
+    bits64_t address;
+    bits64_t length;
 } mmap_entry_t;
 
 typedef struct _gdt_ptr {
@@ -53,7 +62,7 @@ uint32_t mem32_check(uint32_t addr, uint32_t size);
 uint32_t mem32_space(uint32_t addr);
 
 //paging
-uint32_t mem32_setup_early_paging();
+uint32_t mem32_setup_early_paging(void **page_table_ptr_ptr, void **end_ptr, void *kernel64_start, void *kernel64_end, uint32_t verbose);
 
 #define ADJUST_PTR(ptr,mult) ((uint32_t)ptr % mult ? ptr + (mult - ((uint32_t)ptr % mult)) : ptr)
 

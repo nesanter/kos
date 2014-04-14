@@ -1,5 +1,6 @@
 #include "handoff.h"
 #include "palloc.h"
+#include "early_kterm.h"
 
 typedef struct _pmap {
     void *start;
@@ -11,23 +12,28 @@ pmap_t *palloc_map; //linked list
 uint64_t palloc_map_size;
 #define PALLOC_MAP_MAX_SIZE (24576)
 
-uint64_t palloc_init(void *dest, mmap_entry_t *mmap, uint64_t mmap_entries,
-                 mmap_entry_t *reserved, uint64_t reserved_entries) {
+uint64_t palloc_init(void *dest, mmap_entry_t *mmap, uint32_t mmap_entries,
+                 mmap_entry_t *reserved, uint32_t reserved_entries) {
     
-    palloc_map = (pmap_t*)0x100000;
+    palloc_map = (pmap_t*)dest;
     
-    pmap_t *tail = palloc_map;
+    ekterm_write("mmapn ");
+    ekterm_write_hex(mmap_entries,16);
+    ekterm_write("\nresn ");
+    ekterm_write_hex(reserved_entries,16);
+    ekterm_write_char('\n');
     
     for (uint64_t i=0; i<mmap_entries; i++) {
-        tail->start = (void*)mmap[i].address;
-        tail->end = (void*)mmap[i].address + mmap[i].length;
-        if (i+1<mmap_entries) {
-            tail->next = (pmap_t*)(tail+1);
-        } else {
-            tail->next = NULL;
+        palloc_map[i].start = (void*)mmap[i].address;
+        palloc_map[i].end = (void*)mmap[i].address + mmap[i].length;
+        if (i>0) {
+            palloc_map[i-1].next = &palloc_map[i];
         }
         palloc_map_size += sizeof(pmap_t);
     }
+    palloc_map[mmap_entries-1].next = NULL;
+    
+    pdump();
     
     for (uint64_t i=0; i<reserved_entries; i++) {
         for (uint64_t i=0; i<reserved[i].length; i+=0x1000) {
@@ -152,10 +158,17 @@ uint64_t preserve(void *ptr) {
     pmap_t *p = palloc_map;
     pmap_t *prev = NULL;
     
+    ekterm_write("hello, snrk!");
+    
+    //ekterm_write_hex((uint64_t)p,16);
+    return 0;
+    
     while (p) {
         if (p->start <= ptr && ptr < p->end) {
             if (p->start - ptr <= 0x1000) {
                 //take from front
+                ekterm_write("front\n");
+                return 0;
                 p->start += 0x1000;
                 if (p->end - p->start < 0x1000) {
                     //smaller than page,
@@ -169,6 +182,8 @@ uint64_t preserve(void *ptr) {
                 return 0;
             } else if (ptr - p->end <= 0x1000) {
                 //take from end
+                ekterm_write("end\n");
+                return 0;
                 p->end -= 0x1000;
                 if (p->end - p->start < 0x1000) {
                     //smaller than page,
@@ -182,6 +197,8 @@ uint64_t preserve(void *ptr) {
                 return 0;
             } else {
                 //split block in two
+                ekterm_write("split\n");
+                return 0;
                 pmap_t *newp = (pmap_t*)((void*)palloc_map + palloc_map_size);
                 
                 palloc_map_size += sizeof(pmap_t);
@@ -211,5 +228,14 @@ uint64_t preserve(void *ptr) {
 }
 
 void pdump() {
-    
+    ekterm_write("pdump (\n");
+    pmap_t *p = palloc_map;
+    while (p) {
+        ekterm_write_hex((uint64_t)p->start, 16);
+        ekterm_write(" -> ");
+        ekterm_write_hex((uint64_t)p->end, 16);
+        ekterm_write_char('\n');
+        p = p->next;
+    }
+    ekterm_write(")\n");
 }

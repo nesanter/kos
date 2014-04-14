@@ -268,12 +268,24 @@ void kernel32_main(uint32_t multiboot_ptr, uint32_t *bootstrap_ptr) {
     kterm_write_ui32d(sz);
     kterm_write_line();
     
+    void *end;
+    
     //setup paging
-    if (mem32_setup_early_paging(&ptr, load_target, load_target2, opts.flags.verbose)) {
+    if (mem32_setup_early_paging(&ptr, &end, load_target, load_target2, opts.flags.verbose)) {
         kterm_write("[fail] error building page tables\n");
         kernel32_hang();
     }
     
+    handoff->reserved[0].address.l = 0x0;
+    handoff->reserved[0].address.h = 0x0;
+    handoff->reserved[0].length.l = 0x100000;
+    handoff->reserved[0].length.h = 0x0;
+    handoff->reserved[1].address.l = (uint32_t)load_target;
+    handoff->reserved[1].address.h = 0x0;
+    handoff->reserved[1].length.l = (uint32_t)end-(uint32_t)load_target;
+    handoff->reserved[1].length.h = 0x0;
+    
+    handoff->reserved_entry_num = 2;
     
     uint32_t cr3_new = (uint32_t)ptr;
     
@@ -337,7 +349,13 @@ void kernel32_main(uint32_t multiboot_ptr, uint32_t *bootstrap_ptr) {
     kterm_write_ui16hx(idt_ptr.limit);
     kterm_write_line();
     */
-    kernel32_finalize(load_target2, /*cr0_new, cr4_new,*/ cr3_new, gdt_ptr.base_low,
+    /*
+    kterm_write_ui32hx(sizeof(kernel_handoff_t));
+    kterm_write_line();
+    //return;
+    */
+    kernel32_finalize((void*)((uint32_t)handoff - (uint32_t)load_target),
+        /*cr0_new, cr4_new,*/ cr3_new, gdt_ptr.base_low,
         gdt_ptr.limit, idt_ptr.base_low, idt_ptr.limit,
         entry_high, entry_low);
 }
