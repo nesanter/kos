@@ -1,13 +1,5 @@
 bits 64
 
-section .data
-my_data:
-    db "i love mai snrk"
-
-section .bss
-my_bss:
-    resb 1
-
 section .text
 global _start
 _start:
