@@ -36,11 +36,13 @@ uint64_t palloc_init(void *dest, mmap_entry_t *mmap, uint32_t mmap_entries,
     pdump();
     
     for (uint64_t i=0; i<reserved_entries; i++) {
-        for (uint64_t i=0; i<reserved[i].length; i+=0x1000) {
-            if (preserve((void*)reserved[i].address+i)) {
-                return 1;
-            }
+        for (uint64_t j=0; j<reserved[i].length; j+=0x1000) {
+            preserve((void*)reserved[i].address+j);
         }
+    }
+    
+    for (uint64_t i=0; i<PALLOC_MAP_MAX_SIZE; i+=0x1000) {
+        preserve(((void*)palloc_map)+i);
     }
     
     return 0;
@@ -158,21 +160,23 @@ uint64_t preserve(void *ptr) {
     pmap_t *p = palloc_map;
     pmap_t *prev = NULL;
     
-    ekterm_write("hello, snrk!");
+    //ekterm_write("hello, snrk!");
     
     //ekterm_write_hex((uint64_t)p,16);
-    return 0;
+    //return 0;
     
     while (p) {
+        //ekterm_write_hex((uint64_t)p,16);
+        //ekterm_write_char('\n');
         if (p->start <= ptr && ptr < p->end) {
-            if (p->start - ptr <= 0x1000) {
+            if (ptr - p->start <= 0x1000) {
                 //take from front
-                ekterm_write("front\n");
-                return 0;
+                //ekterm_write("front\n");
                 p->start += 0x1000;
                 if (p->end - p->start < 0x1000) {
                     //smaller than page,
                     //so remove
+                    ekterm_write("removing\n");
                     if (prev) {
                         prev->next = p->next;
                     } else {
@@ -180,10 +184,9 @@ uint64_t preserve(void *ptr) {
                     }
                 }
                 return 0;
-            } else if (ptr - p->end <= 0x1000) {
+            } else if (p->end - ptr <= 0x1000) {
                 //take from end
                 ekterm_write("end\n");
-                return 0;
                 p->end -= 0x1000;
                 if (p->end - p->start < 0x1000) {
                     //smaller than page,
@@ -198,7 +201,6 @@ uint64_t preserve(void *ptr) {
             } else {
                 //split block in two
                 ekterm_write("split\n");
-                return 0;
                 pmap_t *newp = (pmap_t*)((void*)palloc_map + palloc_map_size);
                 
                 palloc_map_size += sizeof(pmap_t);
@@ -227,7 +229,7 @@ uint64_t preserve(void *ptr) {
     return 1;
 }
 
-void pdump() {
+void pdump(void) {
     ekterm_write("pdump (\n");
     pmap_t *p = palloc_map;
     while (p) {
