@@ -89,7 +89,7 @@ typedef struct _xcr0 {
 } xcr0_t;
 */
 
-extern cr0_t read_cr0();
-extern cr4_t read_cr4();
+extern cr0_t read_cr0(void);
+extern cr4_t read_cr4(void);
 
 #endif
