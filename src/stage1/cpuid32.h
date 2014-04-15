@@ -25,7 +25,7 @@ typedef struct _cpuid_precheck_info {
     uint8_t valid, max_low, max_high, vendor;
 } cpuid_precheck_info_t;
 
-cpuid_precheck_info_t* kernel32_cpuid_precheck();
+cpuid_precheck_info_t* kernel32_cpuid_precheck(void);
 void kernel32_cpuid(uint32_t eax, cpuid_info_t *info);
 
 /* CRn breakdown */
