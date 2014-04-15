@@ -260,18 +260,42 @@ uint32_t mem32_build_idt(idt_ptr_t *idt_ptr, void* dest, uint32_t *size, kernel6
         .zero = 0
     };
     
-    for (uint32_t i=0; i<13; i++) {
+    idt_segment_t idt_df_entry = {
+        .offset_low = 0xFFFF & isr_ptrs->df_low,
+        .selector = 0x8,
+        .ist = 0,
+        .type = 0b10001110,
+        .offset_middle = (0xFFFF0000 & isr_ptrs->df_low) >> 16,
+        .offset_high = isr_ptrs->df_high,
+        .zero = 0
+    };
+    
+    idt_segment_t idt_i80_entry = {
+        .offset_low = 0xFFFF & isr_ptrs->i80_low,
+        .selector = 0x8,
+        .ist = 0,
+        .type = 0b10001110,
+        .offset_middle = (0xFFFF0000 & isr_ptrs->i80_low) >> 16,
+        .offset_high = isr_ptrs->i80_high,
+        .zero = 0
+    };
+    
+    uint32_t max_entry = 81;
+    
+    for (uint32_t i=0; i<max_entry; i++) {
         idt_table[i] = idt_zero_entry;
     }
     
+    idt_table[8]  = idt_df_entry;
     idt_table[13] = idt_gp_entry;
     idt_table[14] = idt_pf_entry;
+    idt_table[80] = idt_i80_entry;
 
-    idt_ptr->limit = (sizeof(idt_segment_t) * 14) - 1;
+    idt_ptr->limit = (sizeof(idt_segment_t) * max_entry) - 1;
     idt_ptr->base_low = (uint32_t)dest;
     idt_ptr->base_high = 0x00000000;
     
-    *size = sizeof(idt_segment_t) * 14;
+    *size = sizeof(idt_segment_t) * max_entry;
 
     return 0;
 }

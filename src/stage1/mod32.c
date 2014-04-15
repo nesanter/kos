@@ -249,6 +249,11 @@ void* mod32_load_k64(void *dest, uint32_t space, kernel64_isr_ptrs_t *isr_ptrs, 
                         isr_ptrs->gp_low = entry32[2];
                         isr_ptrs->pf_high = entry32[5];
                         isr_ptrs->pf_low = entry32[4];
+                        isr_ptrs->df_high = entry32[7];
+                        isr_ptrs->df_low = entry32[6];
+                        isr_ptrs->i80_high = entry32[9];
+                        isr_ptrs->i80_low = entry32[8];
+                        
                         /*
                         uint32_t extra = entry32[7];
                         

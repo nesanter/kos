@@ -47,6 +47,10 @@ typedef struct _kernel64_isr_ptrs {
     uint32_t gp_high;
     uint32_t pf_low;
     uint32_t pf_high;
+    uint32_t df_low;
+    uint32_t df_high;
+    uint32_t i80_low;
+    uint32_t i80_high;
 } kernel64_isr_ptrs_t;
 
 mmap_entry_t mmap[KERNEL32_MAX_MMAP_ENTRIES];

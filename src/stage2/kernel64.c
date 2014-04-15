@@ -22,9 +22,6 @@ void kernel64_main(uint32_t handoff_ptr_raw) {
     ekterm_write_hex((uint64_t)early_safe,16);
     ekterm_write_char('\n');
     
-    uint64_t *p = (uint64_t*)0x500000;
-    *p = 3;
-    
     return;
     
     //ekterm_write_hex(sizeof(kernel_handoff_t),16);
