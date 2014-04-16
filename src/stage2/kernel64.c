@@ -1,6 +1,7 @@
 #include "handoff.h"
 #include "early_kterm.h"
 #include "palloc.h"
+#include "paging.h"
 
 void kernel64_main(uint32_t handoff_ptr_raw) {
     ekterm_initialize();
@@ -36,8 +37,31 @@ void kernel64_main(uint32_t handoff_ptr_raw) {
     
     pdump();
     
+    void* ptr = (void*)0xFFFF800010000000;
     
-    ekterm_write("hello, world!");
+    void* newpage_p;
+    palloc(&newpage_p, 1);
+    
+    uint64_t newpage = (uint64_t)newpage_p;
+    
+    ekterm_write("new page @ ");
+    ekterm_write_hex(newpage,16);
+    ekterm_write_char('\n');
+    
+    map((uint64_t)ptr, newpage, 1, 0, 0);
+    
+    //ekterm_clear();
+    
+    //dump_paging();
+    
+    *(uint64_t*)ptr = 7;
+    
+    ekterm_write("unmapping...\n");
+    unmap((uint64_t)ptr);
+    
+    *(uint64_t*)ptr = 6;
+    
+    ekterm_write("hello, world!\n");
 }
 
 void kernel64_fault_gp(uint64_t ip) {

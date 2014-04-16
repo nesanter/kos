@@ -1,8 +1,9 @@
-#ifndef PALLOC_H
-#define PALLOC_H
+#ifndef _PALLOC_H
+#define _PALLOC_H
 
 #include <stddef.h>
 #include <stdint.h>
+#include "handoff.h"
 
 uint64_t palloc_init(void *dest, mmap_entry_t *mmap, uint32_t mmap_entries,
                      mmap_entry_t *reserved, uint32_t reserved_entries);

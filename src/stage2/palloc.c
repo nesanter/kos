@@ -52,18 +52,26 @@ uint64_t palloc(void **ptrs, uint64_t num_pages) {
     
     uint64_t i=0, n;
     
+    pmap_t *p = palloc_map;
+    
+    if (!p)
+        return 1;
+    
     while (num_pages) {
-        n = (palloc_map->end - palloc_map->start) / 0x1000;
+        n = (p->end - p->start) / 0x1000;
         if (n > num_pages) {
             n = num_pages;
         }
         num_pages -= n;
         while (n--) {
-            ptrs[i++] = palloc_map->start;
-            palloc_map->start += 0x1000;
+            ekterm_write("palloc: ");
+            ekterm_write_hex((uint64_t)p->start,16);
+            ekterm_write_char('\n');
+            ptrs[i++] = p->start;
+            p->start += 0x1000;
         }
-        palloc_map = palloc_map->next;
-        if (!palloc_map) {
+        p = p->next;
+        if (!p) {
             return 1;
         }
     }
