@@ -1,5 +1,5 @@
 OS_NAME="snrk-os"
-MODULES="stage1 stage2"
+MODULES="stage1 kmalloc stage2"
 LINKER_SCRIPT="linker_m.ld"
 KERNEL="stage1"
 CROSSPATH="/opt/k/cross/bin"

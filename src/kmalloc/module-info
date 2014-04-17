@@ -1,0 +1,4 @@
+FLAGS=":lib:"
+FILES="kmalloc.c"
+SHARED_FILES=""
+PUBLIC="kmalloc.h"

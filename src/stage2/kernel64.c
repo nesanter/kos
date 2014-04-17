@@ -2,6 +2,8 @@
 #include "early_kterm.h"
 #include "palloc.h"
 #include "paging.h"
+#include "loader.h"
+#include "kmalloc.h"
 
 void kernel64_main(uint32_t handoff_ptr_raw) {
     ekterm_initialize();
@@ -59,9 +61,13 @@ void kernel64_main(uint32_t handoff_ptr_raw) {
     ekterm_write("unmapping...\n");
     unmap((uint64_t)ptr);
     
-    *(uint64_t*)ptr = 6;
+    //*(uint64_t*)ptr = 6;
     
     ekterm_write("hello, world!\n");
+    
+    module_init();
+    
+    kmalloc(7);
 }
 
 void kernel64_fault_gp(uint64_t ip) {
